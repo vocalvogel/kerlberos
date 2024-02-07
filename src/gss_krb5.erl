@@ -1,5 +1,8 @@
 %% kerlberos
 %%
+%% This file has been modified from it's original version
+%% Modifications Copyright 2024 William Crooks
+%%
 %% Copyright 2021 Alex Wilson <alex@uq.edu.au>
 %% The University of Queensland
 %% All rights reserved.
@@ -761,14 +764,17 @@ accept_auth(A, S0 = #?MODULE{tktkey = TktKey, opts = C,
                     end,
                     Flags = decode_flags(FlagsBin),
                     OurFlags = decode_flags(OurFlagsBin),
+                    FlagsCovered = lists:all(fun(K) ->
+                        maps:get(K,Flags) == maps:get(K,OurFlags,nil)
+                    end,maps:keys(Flags)),
                     AllFF = binary:copy(<<16#FF>>, byte_size(Bnd)),
                     Valid = if
-                        (OurBnd =:= Bnd) and (OurFlags =:= Flags) -> true;
+                        (OurBnd =:= Bnd) and (FlagsCovered) -> true;
                         (Bnd =:= <<0:(bit_size(Bnd))>>) and
-                            (OurFlags =:= Flags) and
+                            (FlagsCovered) and
                             ((Bindings1 =:= <<>>) or
                              (Bindings1 =:= <<0:16/unit:8>>)) -> true;
-                        (Bnd =:= AllFF) and (OurFlags =:= Flags) and
+                        (Bnd =:= AllFF) and (FlagsCovered) and
                             not (D2 =:= <<>>) -> true;
                         true -> false
                     end,
